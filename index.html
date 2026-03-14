@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bảng Xoay Mật Thư</title>
+    <title>Bảng Xoay Mật Thư - Cấu Trúc Mới</title>
     <style>
         :root {
             --line-color: #333;
             --outer-bg: #8dd3c7; 
-            --middle-bg: #ffffb3;
-            --inner-bg: #bebada;
+            --middle-bg: #bebada; /* Đổi màu vòng chữ cái thứ 2 */
+            --inner-bg: #ffffb3;  /* Đổi màu vòng số */
             --base-size: 600px;
         }
 
@@ -76,36 +76,32 @@
             justify-content: center;
         }
 
-        /* Tinh chỉnh tâm xoay bằng đơn vị % để chữ không bao giờ lệch */
-        /* Cấu trúc: transform-origin: center [bán kính từ tâm đến chữ] */
-        
-        /* Vòng ngoài */
+        /* Vòng ngoài (Chữ cái) */
         .wheel-outer .label { 
             font-size: 22px; 
             top: 15px; 
             transform-origin: center calc(300px - 20px); 
         }
 
-        /* Vòng giữa */
+        /* Vòng giữa (Chữ cái) */
         .wheel-middle .label { 
-            font-size: 18px; 
-            top: 12px; 
-            transform-origin: center calc(234px - 15px); /* 78% của 300px */
-        }
-
-        /* Vòng trong cùng - Đã sửa lỗi */
-        .wheel-inner .label { 
             font-size: 20px; 
             top: 15px; 
-            transform-origin: center calc(168px - 15px); /* 56% của 300px */
+            transform-origin: center calc(234px - 20px); 
         }
 
-        /* Responsive cho Mobile */
+        /* Vòng trong cùng (Số) */
+        .wheel-inner .label { 
+            font-size: 18px; 
+            top: 12px; 
+            transform-origin: center calc(168px - 15px); 
+        }
+
         @media (max-width: 600px) {
             :root { --base-size: 90vw; }
             .wheel-outer .label { top: 2.5vw; transform-origin: center 42.5vw; font-size: 4vw; }
-            .wheel-middle .label { top: 2vw; transform-origin: center 33vw; font-size: 3.5vw; }
-            .wheel-inner .label { top: 2.5vw; transform-origin: center 22.5vw; font-size: 3vw; }
+            .wheel-middle .label { top: 2.5vw; transform-origin: center 32.5vw; font-size: 4vw; }
+            .wheel-inner .label { top: 2vw; transform-origin: center 23vw; font-size: 2.5vw; }
         }
 
         .center-hole {
@@ -139,13 +135,11 @@
             items.forEach((item, i) => {
                 const angle = i * step;
                 
-                // Vạch kẻ
                 const tick = document.createElement('div');
                 tick.className = 'tick';
                 tick.style.transform = `rotate(${angle - step/2}deg)`;
                 wheel.appendChild(tick);
 
-                // Chữ cái
                 const label = document.createElement('div');
                 label.className = 'label';
                 label.innerText = item;
@@ -187,9 +181,10 @@
             window.addEventListener('touchend', end);
         }
 
+        // Thứ tự render mới: Ngoài (Chữ), Giữa (Chữ), Trong (Số)
         renderWheel('outer', alphabet);
-        renderWheel('middle', numbers);
-        renderWheel('inner', alphabet);
+        renderWheel('middle', alphabet);
+        renderWheel('inner', numbers);
     </script>
 </body>
 </html>
