@@ -255,9 +255,9 @@
         // --- SPEED LOGIC ---
         document.getElementById('speedSelect').onchange = (e) => {
             const val = e.target.value;
-            if(val === 'slow') speedSettings = { charGap: 800, wordGap: 1600 };
+            if(val === 'slow') speedSettings = { charGap: 1000, wordGap: 1600 };
             else if(val === 'normal') speedSettings = { charGap: 350, wordGap: 1000 };
-            else if(val === 'fast') speedSettings = { charGap: 150, wordGap: 500 };
+            else if(val === 'fast') speedSettings = { charGap: 100, wordGap: 500 };
         };
 
         // --- AUDIO ENGINE (FIXED FOR IOS) ---
