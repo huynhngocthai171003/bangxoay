@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Morse Pro - Master Training</title>
+    <title>Morse Pro - iOS Stable Version</title>
     <style>
         :root { --sidebar-width: 80px; --accent: #00d2fc; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -65,7 +65,7 @@
             background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
             color: white; padding: 8px; border-radius: 8px; outline: none; font-size: 13px;
         }
-        .options-box input[type="number"] { width: 70px; text-align: center; }
+        .options-box input[type="number"] { width: 60px; text-align: center; }
 
         .input-group { position: relative; margin-bottom: 10px; }
         textarea { 
@@ -73,9 +73,7 @@
             border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; 
             color: white; padding: 15px; font-size: 18px; resize: none; outline: none; 
         }
-        .btn-show-hide {
-            position: absolute; right: 10px; top: 10px; background: none; border: none; color: var(--accent); cursor: pointer; font-size: 20px;
-        }
+        .btn-show-hide { position: absolute; right: 10px; top: 10px; background: none; border: none; color: var(--accent); cursor: pointer; font-size: 20px; }
 
         .telex-preview { font-size: 13px; color: var(--accent); margin-bottom: 10px; font-weight: bold; min-height: 1.2em; }
 
@@ -126,11 +124,11 @@
                     <option value="fast">TỐC ĐỘ: NHANH</option>
                 </select>
                 <input type="number" id="wordCountInput" value="5" min="1" max="100">
-                <button id="btnGenerate" style="flex: 1; padding: 8px 10px; font-size: 11px; background: var(--accent); color: #1a1a2e;">TẠO NGẪU NHIÊN</button>
+                <button id="btnGenerate" style="flex: 1; padding: 8px 10px; background: var(--accent); color: #1a1a2e;">TẠO NGẪU NHIÊN</button>
             </div>
 
             <div class="input-group">
-                <textarea id="inputText" placeholder="Nhập bản tin hoặc bấm TẠO..."></textarea>
+                <textarea id="inputText" placeholder="Nhập văn bản hoặc bấm TẠO..."></textarea>
                 <button class="btn-show-hide" id="btnShowHide">👁️</button>
             </div>
 
@@ -165,6 +163,10 @@
         let realText = ""; 
         let isHidden = false;
         let speedSettings = { charGap: 350, wordGap: 1000 };
+        let isPlaying = false;
+        
+        // GIẢI PHÁP CHO IOS: Dùng 1 đối tượng Audio duy nhất xuyên suốt
+        const globalAudio = new Audio();
 
         const input = document.getElementById('inputText');
         const telexPreview = document.getElementById('telexPreview');
@@ -172,7 +174,10 @@
         const btnShowHide = document.getElementById('btnShowHide');
 
         function toTelex(str) {
-            const charMap = {'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ằ':'aw','ắ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ầ':'aa','ấ':'aa','ẩ':'aa','ẫ':'aa','ậ':'aa','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ề':'ee','ế':'ee','ể':'ee','ễ':'ee','ệ':'ee','ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i','ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ồ':'oo','ố':'oo','ổ':'oo','ỗ':'oo','ộ':'oo','ờ':'ow','ớ':'ow','ở':'ow','ỡ':'ow','ợ':'ow','ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ừ':'uw','ứ':'uw','ử':'uw','ữ':'uw','ự':'uw','ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y','đ':'dd','â':'aa','ă':'aw','ê':'ee','ô':'oo','ơ':'ow','ư':'uw','ệ':'ee','ế':'ee','ề':'ee','ể':'ee','ễ':'ee','ậ':'aa','ấ':'aa','ầ':'aa','ẩ':'aa','ẫ':'aa','ặ':'aw','ắ':'aw','ằ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ộ':'oo','ố':'oo','ồ':'oo','ổ':'oo','ỗ':'oo','ợ':'ow','ớ':'ow','ờ':'ow','ở':'ow','ỡ':'ow','ự':'uw','ứ':'uw','ừ':'uw','ử':'uw','ữ':'uw'};
+            const charMap = {
+                'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ằ':'aw','ắ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ầ':'aa','ấ':'aa','ẩ':'aa','ẫ':'aa','ậ':'aa','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ề':'ee','ế':'ee','ể':'ee','ễ':'ee','ệ':'ee','ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i','ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ồ':'oo','ố':'oo','ổ':'oo','ỗ':'oo','ộ':'oo','ờ':'ow','ớ':'ow','ở':'ow','ỡ':'ow','ợ':'ow','ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ừ':'uw','ứ':'uw','ử':'uw','ữ':'uw','ự':'uw','ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y','đ':'dd','â':'aa','ă':'aw','ê':'ee','ô':'oo','ơ':'ow','ư':'uw',
+                'ệ':'ee','ế':'ee','ề':'ee','ể':'ee','ễ':'ee','ộ':'oo','ố':'oo','ồ':'oo','ổ':'oo','ỗ':'oo','ợ':'ow','ớ':'ow','ờ':'ow','ở':'ow','ỡ':'ow','ự':'uw','ứ':'uw','ừ':'uw','ử':'uw','ữ':'uw'
+            };
             const toneMap = {'á':'s','à':'f','ả':'r','ã':'x','ạ':'j','ắ':'s','ằ':'f','ẳ':'r','ẵ':'x','ặ':'j','ấ':'s','ầ':'f','ẩ':'r','ẫ':'x','ậ':'j','é':'s','è':'f','ẻ':'r','ẽ':'x','ẹ':'j','ế':'s','ề':'f','ể':'r','ễ':'x','ệ':'j','í':'s','ì':'f','ỉ':'r','ĩ':'x','ị':'j','ó':'s','ò':'f','ỏ':'r','õ':'x','ọ':'j','ố':'s','ồ':'f','ổ':'r','ỗ':'x','ộ':'j','ớ':'s','ờ':'f','ở':'r','ỡ':'x','ợ':'j','ú':'s','ù':'f','ủ':'r','ũ':'x','ụ':'j','ứ':'s','ừ':'f','ử':'r','ữ':'x','ự':'j','ý':'s','ỳ':'f','ỷ':'r','ỹ':'x','ỵ':'j'};
             return str.toLowerCase().split(' ').map(word => {
                 let newWord = ""; let tones = "";
@@ -191,7 +196,7 @@
             if (isHidden) {
                 input.value = realText.replace(/[^\s]/g, '*');
                 telexPreview.innerText = "Bản Telex: " + telexText.replace(/[^\s]/g, '*');
-                output.innerText = morseSymbols.replace(/[^\s/]/g, '*'); // Ẩn cả mã morse thành *
+                output.innerText = morseSymbols.replace(/[^\s/]/g, '*');
             } else {
                 input.value = realText;
                 telexPreview.innerText = "Bản Telex: " + telexText;
@@ -199,73 +204,120 @@
             }
         }
 
-        input.addEventListener('input', () => {
-            realText = input.value;
-            isHidden = false;
-            updateDisplay();
-        });
-
+        input.addEventListener('input', () => { realText = input.value; isHidden = false; updateDisplay(); });
         btnShowHide.onclick = () => { isHidden = !isHidden; updateDisplay(); };
 
-        // --- RANDOM LOGIC (LẤY NGUYÊN TỪ) ---
+        // --- RANDOM LOGIC (FIX LẤY TRỌN VẸN TỪ) ---
         document.getElementById('btnGenerate').onclick = async () => {
-            try {
-                const response = await fetch('random.txt');
-                if (!response.ok) throw new Error();
-                const text = await response.text();
-                
-                // Tách thành mảng các từ, loại bỏ rác
-                const allWords = text.split(/\s+/)
-                    .map(w => w.replace(/[^a-zA-Zàáảãạằắẳẵặầấẩẫậèéẻẽẹềếểễệìíỉĩịòóỏõọồốổỗộờớởỡợùúủũụừứửữựỳýỷỹỵđ]/gi, ''))
-                    .filter(w => w.length > 1); // Lấy từ có nghĩa (độ dài > 1)
-                
-                if (allWords.length === 0) { alert("File trống hoặc không có chữ!"); return; }
+    try {
+        // Gán trực tiếp file, thêm tham số để chống cache của trình duyệt
+        const response = await fetch('random.txt?v=' + Math.random());
+        if (!response.ok) throw new Error();
+        
+        const rawText = await response.text();
 
-                const count = parseInt(document.getElementById('wordCountInput').value) || 5;
-                let selected = [];
-                for(let i=0; i<count; i++) {
-                    selected.push(allWords[Math.floor(Math.random() * allWords.length)]);
-                }
-                realText = selected.join(' ');
-                isHidden = true; // Mặc định ẩn
-                updateDisplay();
-            } catch (err) { alert("Lỗi: Kiểm tra file random.txt trong cùng thư mục!"); }
-        };
+        // CÁCH LỌC MỚI: Xóa số và ký tự đặc biệt, GIỮ LẠI toàn bộ chữ cái (kể cả ô, ơ, ê...)
+        const allWords = rawText.split(/\s+/)
+            .map(w => {
+                // Chỉ xóa: số 0-9 và các dấu câu rác. Không xóa chữ cái Unicode.
+                return w.replace(/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/g, '').trim();
+            })
+            .filter(w => w.length >= 2); // Chỉ lấy từ trọn vẹn (từ 2 chữ trở lên)
 
+        if (allWords.length === 0) {
+            alert("File random.txt không có chữ hợp lệ!");
+            return;
+        }
+
+        // Lấy số lượng từ người dùng nhập
+        const countInput = document.getElementById('wordCountInput');
+        const count = parseInt(countInput.value) || 5;
+
+        let selected = [];
+        for (let i = 0; i < count; i++) {
+            const randomIndex = Math.floor(Math.random() * allWords.length);
+            selected.push(allWords[randomIndex]);
+        }
+
+        realText = selected.join(' ');
+        isHidden = true; // Mặc định ẩn khi tạo ngẫu nhiên
+        
+        // Gọi hàm cập nhật giao diện của bạn (đảm bảo hàm này có tồn tại)
+        if (typeof updateDisplay === "function") updateDisplay();
+        else if (typeof updateUI === "function") updateUI();
+
+    } catch (err) {
+        alert("Lỗi: Không tìm thấy file 'random.txt'. Hãy đảm bảo file này nằm cùng thư mục với file HTML!");
+        console.error(err);
+    }
+};
+
+        // --- SPEED LOGIC ---
         document.getElementById('speedSelect').onchange = (e) => {
             const val = e.target.value;
-            if(val === 'slow') speedSettings = { charGap: 1000, wordGap: 1800 };
+            if(val === 'slow') speedSettings = { charGap: 800, wordGap: 1600 };
             else if(val === 'normal') speedSettings = { charGap: 350, wordGap: 1000 };
             else if(val === 'fast') speedSettings = { charGap: 150, wordGap: 500 };
         };
 
-        let isPlaying = false; let currentAudio = null;
+        // --- AUDIO ENGINE (FIXED FOR IOS) ---
         function playAudioFile(fileName) {
             return new Promise((resolve) => {
                 if (!isPlaying) { resolve(); return; }
-                const audio = new Audio(SOUND_PATH + fileName); currentAudio = audio;
-                audio.play().catch(() => resolve());
-                audio.onended = () => { currentAudio = null; resolve(); };
+                
+                // Thay vì tạo Audio mới, ta cập nhật src của Audio cũ
+                globalAudio.src = SOUND_PATH + fileName;
+                globalAudio.load(); 
+                
+                globalAudio.play().catch(e => {
+                    console.log("Audio skip: " + fileName);
+                    resolve();
+                });
+
+                globalAudio.onended = () => resolve();
+                globalAudio.onerror = () => resolve();
             });
         }
+
         async function startPlaying() {
             if (isPlaying) return;
-            const text = toTelex(realText); if (!text || text.trim() === "") return;
-            isPlaying = true; document.getElementById('btnPlay').disabled = true;
-            await playAudioFile("AR.mp3"); await new Promise(r => setTimeout(r, 600));
+            const text = toTelex(realText);
+            if (!text || text.trim() === "") return;
+
+            isPlaying = true;
+            document.getElementById('btnPlay').disabled = true;
+
+            // Unlock audio trên iOS qua một file câm hoặc file AR đầu tiên
+            await playAudioFile("AR.mp3");
+            await new Promise(r => setTimeout(r, speedSettings.charGap));
+
             const words = text.split(' ');
             for (let i = 0; i < words.length; i++) {
                 if (!isPlaying) break;
-                for (let char of words[i].split('')) {
+                const chars = words[i].split('');
+                for (let char of chars) {
                     if (!isPlaying) break;
-                    if (/^[A-Z0-9]$/.test(char)) { await playAudioFile(char + ".mp3"); await new Promise(r => setTimeout(r, speedSettings.charGap)); }
+                    if (/^[A-Z0-9]$/.test(char)) {
+                        await playAudioFile(char + ".mp3");
+                        await new Promise(r => setTimeout(r, speedSettings.charGap));
+                    }
                 }
                 if (i < words.length - 1) await new Promise(r => setTimeout(r, speedSettings.wordGap));
             }
-            if (isPlaying) { await new Promise(r => setTimeout(r, 600)); await playAudioFile("NW.mp3"); }
+
+            if (isPlaying) {
+                await new Promise(r => setTimeout(r, speedSettings.charGap));
+                await playAudioFile("NW.mp3");
+            }
             stopPlaying();
         }
-        function stopPlaying() { isPlaying = false; if (currentAudio) { currentAudio.pause(); currentAudio = null; } document.getElementById('btnPlay').disabled = false; }
+
+        function stopPlaying() {
+            isPlaying = false;
+            globalAudio.pause();
+            globalAudio.src = ""; // Clear để giải phóng memory trên iOS
+            document.getElementById('btnPlay').disabled = false;
+        }
 
         document.getElementById('btnPlay').onclick = startPlaying;
         document.getElementById('btnStop').onclick = stopPlaying;
@@ -276,10 +328,11 @@
         const sidebar = document.getElementById('sidebar');
         menuToggle.onclick = (e) => { sidebar.classList.add('open'); e.stopPropagation(); };
         document.getElementById('mainContent').onclick = () => sidebar.classList.remove('open');
+        document.getElementById('mainContent').ontouchstart = () => sidebar.classList.remove('open');
         document.getElementById('btnExpand').onclick = () => { 
-            // Nếu đang ẩn thì không cho xem toàn bộ hoặc cũng hiện dấu * trong modal
-            const content = isHidden ? output.innerText : output.innerText;
-            document.getElementById('fullMorseText').innerText = content; 
+            const telexText = toTelex(realText);
+            const morseSymbols = telexText.split('').map(char => char === ' ' ? ' / ' : (morseMap[char] || '')).join(' ');
+            document.getElementById('fullMorseText').innerText = isHidden ? morseSymbols.replace(/[^\s/]/g, '*') : morseSymbols;
             document.getElementById('morseModal').style.display = 'flex'; 
         };
         document.getElementById('btnCloseModal').onclick = () => document.getElementById('morseModal').style.display = 'none';
