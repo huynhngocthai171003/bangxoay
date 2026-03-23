@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Morse Pro - iOS Stable Version</title>
+    <title>Morse Pro - IOS Stable Overlay</title>
     <style>
         :root { --sidebar-width: 80px; --accent: #00d2fc; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -21,18 +21,25 @@
             filter: blur(80px); border-radius: 50%; z-index: 0; opacity: 0.4; pointer-events: none;
         }
 
+        /* --- SIDEBAR & OVERLAY --- */
         .sidebar { 
             width: var(--sidebar-width); height: 100%; 
             background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); 
             border-right: 1px solid rgba(255, 255, 255, 0.1); 
             display: flex; flex-direction: column; align-items: center; 
-            padding-top: 40px; z-index: 100; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding-top: 40px; z-index: 1000; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        #menuOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 900;
+        }
+
         .menu-item { 
             writing-mode: vertical-rl; transform: rotate(180deg); 
             padding: 20px 10px; margin: 15px 0; font-size: 0.9rem; 
             letter-spacing: 3px; color: rgba(255, 255, 255, 0.5); 
             cursor: pointer; transition: 0.3s; text-transform: uppercase; border-right: 3px solid transparent; 
+            text-decoration: none;
         }
         .menu-item.active { color: var(--accent); border-right: 3px solid var(--accent); }
 
@@ -46,67 +53,91 @@
             .menu-toggle { display: block; }
             .sidebar { position: fixed; left: 0; transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
-            .sidebar.open ~ .menu-toggle { opacity: 0; visibility: hidden; }
+            #menuOverlay.show { display: block; }
         }
 
-        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 1; cursor: pointer; }
+        /* --- MAIN CONTENT --- */
+        .main-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; z-index: 1; }
         
         .glass-card { 
             background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); 
             border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; 
-            padding: 20px; width: 100%; max-width: 550px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); cursor: default; 
+            padding: 20px; width: 100%; max-width: 480px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); cursor: default; 
+        }
+
+        .status-header {
+            text-align: center; margin: 0 0 15px 0; letter-spacing: 2px; font-size: 18px;
+            font-weight: 900; color: white; text-transform: uppercase;
         }
 
         .options-box {
-            display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 15px;
-            background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 12px;
+            display: flex; gap: 8px; align-items: center; margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 12px;
         }
         .options-box select, .options-box input {
             background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
-            color: white; padding: 8px; border-radius: 8px; outline: none; font-size: 13px;
+            color: white; padding: 8px; border-radius: 8px; outline: none; font-size: 12px;
         }
-        .options-box input[type="number"] { width: 60px; text-align: center; }
-
-        .input-group { position: relative; margin-bottom: 10px; }
-        textarea { 
-            width: 100%; height: 80px; background: rgba(0,0,0,0.3); 
-            border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; 
-            color: white; padding: 15px; font-size: 18px; resize: none; outline: none; 
+        .btn-generate {
+            flex: 1; background: var(--accent); color: #1a1a2e; border: none;
+            padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px;
+            text-transform: uppercase;
         }
-        .btn-show-hide { position: absolute; right: 10px; top: 10px; background: none; border: none; color: var(--accent); cursor: pointer; font-size: 20px; }
 
-        .telex-preview { font-size: 13px; color: var(--accent); margin-bottom: 10px; font-weight: bold; min-height: 1.2em; }
+        .box-title { color: rgba(255,255,255,0.4); font-size: 10px; text-transform: uppercase; text-align: left; margin-bottom: 3px; font-weight: bold; }
+        .row-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; width: 100%; position: relative; }
+        
+        .fixed-box {
+            flex: 1; width: 0; min-width: 0; height: 42px; 
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px; padding: 0 12px; color: white; font-size: 0.95rem;
+            display: flex; align-items: center; justify-content: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        
+        input.fixed-box { display: block; text-align: center; outline: none; padding-right: 40px; }
+        .telex-style { color: var(--accent); font-family: monospace; font-weight: bold; }
 
-        .output-container { position: relative; margin-bottom: 20px; }
+        .btn-show-hide {
+            position: absolute; right: 65px; background: none; border: none;
+            color: var(--accent); cursor: pointer; font-size: 18px; padding: 5px; z-index: 10;
+        }
+
+        .btn-mini-view {
+            flex-shrink: 0; height: 42px; padding: 0 12px; background: var(--accent); color: #1a1a2e;
+            border: none; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer;
+        }
+
+        .output-container { position: relative; margin-top: 10px; margin-bottom: 15px; }
         .output-box { 
             background: rgba(0, 210, 252, 0.05); border-radius: 15px; 
-            padding: 20px; height: 90px; word-break: break-all; font-family: monospace; 
-            font-size: 20px; letter-spacing: 3px; border: 1px dashed var(--accent); 
+            padding: 15px; height: 80px; word-break: break-all; font-family: monospace; 
+            font-size: 18px; letter-spacing: 3px; border: 1px dashed var(--accent); 
             color: var(--accent); display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; 
         }
-        .btn-expand { position: absolute; bottom: 5px; right: 10px; background: var(--accent); color: #1a1a2e; border: none; border-radius: 5px; font-size: 10px; padding: 4px 8px; cursor: pointer; font-weight: bold; }
+        .btn-expand-morse { position: absolute; bottom: 8px; right: 8px; background: var(--accent); color: #1a1a2e; border: none; border-radius: 5px; font-size: 9px; padding: 4px 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; backdrop-filter: blur(10px); justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: rgba(25, 25, 40, 0.95); border: 1px solid var(--accent); border-radius: 20px; width: 100%; max-width: 600px; max-height: 80vh; padding: 30px; position: relative; display: flex; flex-direction: column; }
-        .modal-body { overflow-y: auto; color: var(--accent); font-family: monospace; font-size: 22px; letter-spacing: 4px; word-break: break-all; }
-        .btn-close-modal { margin-top: 20px; background: var(--accent); color: #1a1a2e; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        /* --- MODAL --- */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; backdrop-filter: blur(10px); justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: rgba(20, 20, 35, 0.95); border: 1px solid var(--accent); border-radius: 20px; width: 100%; max-width: 450px; padding: 25px; display: flex; flex-direction: column; }
+        .modal-body { max-height: 50vh; overflow-y: auto; color: white; font-size: 1.1rem; line-height: 1.5; text-align: center; word-break: break-word; }
+        .btn-close { margin-top: 20px; width: 100%; background: var(--accent); color: #1a1a2e; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
         .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; text-transform: uppercase; font-size: 13px; }
-        button:hover:not(:disabled) { background: var(--accent); color: #1a1a2e; }
-        button:disabled { opacity: 0.4; cursor: not-allowed; }
-        .btn-play { grid-column: span 2; background: var(--accent); color: #1a1a2e; font-size: 15px; }
+        button.action-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; text-transform: uppercase; font-size: 12px; }
+        button.action-btn:hover:not(:disabled) { background: var(--accent); color: #1a1a2e; }
+        .btn-play { grid-column: span 2; background: var(--accent); color: #1a1a2e; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="bg-blob" style="top: -100px; left: -100px;"></div>
-    <div class="bg-blob" style="bottom: -50px; right: 10%; background: linear-gradient(135deg, #00d2fc, #302b63);"></div>
+    <div id="menuOverlay"></div>
 
     <aside class="sidebar" id="sidebar">
-        <div class="menu-item" onclick="window.location.href='index.html'">BẢNG XOAY</div>
-        <div class="menu-item active">MORSE</div>
-        <div class="menu-item">CÀI ĐẶT</div>
+        <a href="index.html" class="menu-item">BẢNG XOAY</a>
+        <a href="morse.html" class="menu-item active">MORSE</a>
+        <a href="semaphore.html" class="menu-item">SEMAPHORE</a>
     </aside>
 
     <button class="menu-toggle" id="menuToggle">
@@ -115,69 +146,70 @@
 
     <main class="main-content" id="mainContent">
         <div class="glass-card" onclick="event.stopPropagation()">
-            <h2 style="text-align: center; margin-top: 0; letter-spacing: 2px; font-size: 18px;">HỆ THỐNG MORSE</h2>
+            <h2 class="status-header" id="statusHeader">HỆ THỐNG MORSE</h2>
             
             <div class="options-box">
                 <select id="speedSelect">
-                    <option value="slow">TỐC ĐỘ: CHẬM</option>
-                    <option value="normal" selected>TỐC ĐỘ: BÌNH THƯỜNG</option>
-                    <option value="fast">TỐC ĐỘ: NHANH</option>
+                    <option value="slow">CHẬM</option>
+                    <option value="normal" selected>BÌNH THƯỜNG</option>
+                    <option value="fast">NHANH</option>
                 </select>
-                <input type="number" id="wordCountInput" value="5" min="1" max="100">
-                <button id="btnGenerate" style="flex: 1; padding: 8px 10px; background: var(--accent); color: #1a1a2e;">TẠO NGẪU NHIÊN</button>
+                <input type="number" id="wordCountInput" value="5" min="1" max="100" style="width: 40px; text-align: center;">
+                <button id="btnGenerate" class="btn-generate">TẠO NGẪU NHIÊN</button>
             </div>
 
-            <div class="input-group">
-                <textarea id="inputText" placeholder="Nhập văn bản hoặc bấm TẠO..."></textarea>
-                <button class="btn-show-hide" id="btnShowHide">👁️</button>
+            <div class="box-title">MÃ TELEX</div>
+            <div class="row-group">
+                <div class="fixed-box telex-style" id="telexPreview">-</div>
+                <button class="btn-mini-view" id="btnViewTelex">XEM</button>
             </div>
-
-            <div id="telexPreview" class="telex-preview">Bản Telex: </div>
             
+            <div class="box-title">VĂN BẢN GỐC</div>
+            <div class="row-group">
+                <input type="text" id="inputText" class="fixed-box" placeholder="NHẬP CHỮ..." spellcheck="false">
+                <button class="btn-show-hide" id="btnShowHide">👁️</button>
+                <button class="btn-mini-view" id="btnViewRaw">XEM</button>
+            </div>
+
             <div class="output-container">
                 <div id="outputMorse" class="output-box">... --- ...</div>
-                <button class="btn-expand" id="btnExpand">XEM TOÀN BỘ</button>
+                <button class="btn-expand-morse" id="btnExpandMorse">XEM MÃ</button>
             </div>
             
             <div class="controls">
-                <button id="btnPlay" class="btn-play">PHÁT BẢN TIN</button>
-                <button id="btnStop">DỪNG</button>
-                <button id="btnReset">PHÁT LẠI</button>
-                <button id="btnClear" style="grid-column: span 2;">XÓA BẢN TIN</button>
+                <button id="btnPlay" class="action-btn btn-play">PHÁT BẢN TIN</button>
+                <button id="btnStop" class="action-btn">DỪNG</button>
+                <button id="btnReset" class="action-btn">PHÁT LẠI</button>
+                <button id="btnClear" class="action-btn" style="grid-column: span 2;">XÓA BẢN TIN</button>
             </div>
         </div>
     </main>
 
-    <div class="modal" id="morseModal">
+    <div class="modal" id="infoModal">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: white;">BẢN MÃ ĐẦY ĐỦ</h3>
-            <div class="modal-body" id="fullMorseText"></div>
-            <button class="btn-close-modal" id="btnCloseModal">ĐÓNG</button>
+            <div class="modal-body" id="modalBody"></div>
+            <button class="btn-close" id="btnCloseModal">ĐÓNG</button>
         </div>
     </div>
 
     <script>
+        const menuToggle = document.getElementById('menuToggle'), sidebar = document.getElementById('sidebar'), overlay = document.getElementById('menuOverlay');
+        const openMenu = (e) => { sidebar.classList.add('open'); overlay.classList.add('show'); e.stopPropagation(); };
+        const closeMenu = () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); };
+        menuToggle.addEventListener('click', openMenu);
+        overlay.addEventListener('click', closeMenu);
+
         const SOUND_PATH = "sounds_morse/";
         const morseMap = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.'};
         
-        let realText = ""; 
-        let isHidden = false;
+        let realText = "", isHidden = false, isPlaying = false;
         let speedSettings = { charGap: 350, wordGap: 1000 };
-        let isPlaying = false;
-        
-        // GIẢI PHÁP CHO IOS: Dùng 1 đối tượng Audio duy nhất xuyên suốt
         const globalAudio = new Audio();
 
-        const input = document.getElementById('inputText');
-        const telexPreview = document.getElementById('telexPreview');
-        const output = document.getElementById('outputMorse');
-        const btnShowHide = document.getElementById('btnShowHide');
+        const input = document.getElementById('inputText'), telexPreview = document.getElementById('telexPreview'), output = document.getElementById('outputMorse'), statusHeader = document.getElementById('statusHeader'), btnShowHide = document.getElementById('btnShowHide');
 
         function toTelex(str) {
-            const charMap = {
-                'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ằ':'aw','ắ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ầ':'aa','ấ':'aa','ẩ':'aa','ẫ':'aa','ậ':'aa','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ề':'ee','ế':'ee','ể':'ee','ễ':'ee','ệ':'ee','ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i','ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ồ':'oo','ố':'oo','ổ':'oo','ỗ':'oo','ộ':'oo','ờ':'ow','ớ':'ow','ở':'ow','ỡ':'ow','ợ':'ow','ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ừ':'uw','ứ':'uw','ử':'uw','ữ':'uw','ự':'uw','ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y','đ':'dd','â':'aa','ă':'aw','ê':'ee','ô':'oo','ơ':'ow','ư':'uw',
-                'ệ':'ee','ế':'ee','ề':'ee','ể':'ee','ễ':'ee','ộ':'oo','ố':'oo','ồ':'oo','ổ':'oo','ỗ':'oo','ợ':'ow','ớ':'ow','ờ':'ow','ở':'ow','ỡ':'ow','ự':'uw','ứ':'uw','ừ':'uw','ử':'uw','ữ':'uw'
-            };
+            const charMap = {'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ằ':'aw','ắ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ầ':'aa','ấ':'aa','ẩ':'aa','ẫ':'aa','ậ':'aa','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ề':'ee','ế':'ee','ể':'ee','ễ':'ee','ệ':'ee','ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i','ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ồ':'oo','ố':'oo','ổ':'oo','ỗ':'oo','ộ':'oo','ờ':'ow','ớ':'ow','ở':'ow','ỡ':'ow','ợ':'ow','ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ừ':'uw','ứ':'uw','ử':'uw','ữ':'uw','ự':'uw','ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y','đ':'dd','â':'aa','ă':'aw','ê':'ee','ô':'oo','ơ':'ow','ư':'uw'};
             const toneMap = {'á':'s','à':'f','ả':'r','ã':'x','ạ':'j','ắ':'s','ằ':'f','ẳ':'r','ẵ':'x','ặ':'j','ấ':'s','ầ':'f','ẩ':'r','ẫ':'x','ậ':'j','é':'s','è':'f','ẻ':'r','ẽ':'x','ẹ':'j','ế':'s','ề':'f','ể':'r','ễ':'x','ệ':'j','í':'s','ì':'f','ỉ':'r','ĩ':'x','ị':'j','ó':'s','ò':'f','ỏ':'r','õ':'x','ọ':'j','ố':'s','ồ':'f','ổ':'r','ỗ':'x','ộ':'j','ớ':'s','ờ':'f','ở':'r','ỡ':'x','ợ':'j','ú':'s','ù':'f','ủ':'r','ũ':'x','ụ':'j','ứ':'s','ừ':'f','ử':'r','ữ':'x','ự':'j','ý':'s','ỳ':'f','ỷ':'r','ỹ':'x','ỵ':'j'};
             return str.toLowerCase().split(' ').map(word => {
                 let newWord = ""; let tones = "";
@@ -192,67 +224,61 @@
         function updateDisplay() {
             const telexText = toTelex(realText);
             const morseSymbols = telexText.split('').map(char => char === ' ' ? ' / ' : (morseMap[char] || '')).join(' ');
-
+            
             if (isHidden) {
                 input.value = realText.replace(/[^\s]/g, '*');
-                telexPreview.innerText = "Bản Telex: " + telexText.replace(/[^\s]/g, '*');
+                telexPreview.innerText = telexText.replace(/[^\s/]/g, '*');
                 output.innerText = morseSymbols.replace(/[^\s/]/g, '*');
             } else {
                 input.value = realText;
-                telexPreview.innerText = "Bản Telex: " + telexText;
+                telexPreview.innerText = telexText || "-";
                 output.innerText = morseSymbols || "... --- ...";
             }
         }
 
-        input.addEventListener('input', () => { realText = input.value; isHidden = false; updateDisplay(); });
-        btnShowHide.onclick = () => { isHidden = !isHidden; updateDisplay(); };
+        input.addEventListener('input', () => { 
+            realText = input.value; 
+            isHidden = false; 
+            statusHeader.innerText = "HỆ THỐNG MORSE";
+            updateDisplay(); 
+        });
 
-        // --- RANDOM LOGIC (FIX LẤY TRỌN VẸN TỪ) ---
+        btnShowHide.onclick = () => {
+            isHidden = !isHidden;
+            updateDisplay();
+        };
+
+        const modal = document.getElementById('infoModal'), modalBody = document.getElementById('modalBody');
+        document.getElementById('btnViewTelex').onclick = () => { 
+            const telex = toTelex(realText);
+            modalBody.innerText = isHidden ? telex.replace(/[^\s/]/g, '*') : (telex || "-"); 
+            modal.style.display = "flex"; 
+        }
+        document.getElementById('btnViewRaw').onclick = () => { 
+            modalBody.innerText = isHidden ? realText.replace(/[^\s]/g, '*') : (realText || "(Trống)"); 
+            modal.style.display = "flex"; 
+        }
+        document.getElementById('btnExpandMorse').onclick = () => { 
+            modalBody.innerText = output.innerText; 
+            modal.style.display = "flex"; 
+        }
+        document.getElementById('btnCloseModal').onclick = () => modal.style.display = "none";
+
         document.getElementById('btnGenerate').onclick = async () => {
-    try {
-        // Gán trực tiếp file, thêm tham số để chống cache của trình duyệt
-        const response = await fetch('random.txt?v=' + Math.random());
-        if (!response.ok) throw new Error();
-        
-        const rawText = await response.text();
+            try {
+                const response = await fetch('random.txt?v=' + Math.random());
+                const rawText = await response.text();
+                const allWords = rawText.split(/\s+/).map(w => w.replace(/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/g, '').trim()).filter(w => w.length >= 2);
+                const count = parseInt(document.getElementById('wordCountInput').value) || 5;
+                let selected = [];
+                for (let i = 0; i < count; i++) selected.push(allWords[Math.floor(Math.random() * allWords.length)]);
+                realText = selected.join(' '); 
+                isHidden = true;
+                statusHeader.innerText = "CHẾ ĐỘ NGẪU NHIÊN";
+                updateDisplay();
+            } catch (err) { alert("Lỗi tải file"); }
+        };
 
-        // CÁCH LỌC MỚI: Xóa số và ký tự đặc biệt, GIỮ LẠI toàn bộ chữ cái (kể cả ô, ơ, ê...)
-        const allWords = rawText.split(/\s+/)
-            .map(w => {
-                // Chỉ xóa: số 0-9 và các dấu câu rác. Không xóa chữ cái Unicode.
-                return w.replace(/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/g, '').trim();
-            })
-            .filter(w => w.length >= 2); // Chỉ lấy từ trọn vẹn (từ 2 chữ trở lên)
-
-        if (allWords.length === 0) {
-            alert("File random.txt không có chữ hợp lệ!");
-            return;
-        }
-
-        // Lấy số lượng từ người dùng nhập
-        const countInput = document.getElementById('wordCountInput');
-        const count = parseInt(countInput.value) || 5;
-
-        let selected = [];
-        for (let i = 0; i < count; i++) {
-            const randomIndex = Math.floor(Math.random() * allWords.length);
-            selected.push(allWords[randomIndex]);
-        }
-
-        realText = selected.join(' ');
-        isHidden = true; // Mặc định ẩn khi tạo ngẫu nhiên
-        
-        // Gọi hàm cập nhật giao diện của bạn (đảm bảo hàm này có tồn tại)
-        if (typeof updateDisplay === "function") updateDisplay();
-        else if (typeof updateUI === "function") updateUI();
-
-    } catch (err) {
-        alert("Lỗi: Không tìm thấy file 'random.txt'. Hãy đảm bảo file này nằm cùng thư mục với file HTML!");
-        console.error(err);
-    }
-};
-
-        // --- SPEED LOGIC ---
         document.getElementById('speedSelect').onchange = (e) => {
             const val = e.target.value;
             if(val === 'slow') speedSettings = { charGap: 1000, wordGap: 1600 };
@@ -260,82 +286,69 @@
             else if(val === 'fast') speedSettings = { charGap: 100, wordGap: 500 };
         };
 
-        // --- AUDIO ENGINE (FIXED FOR IOS) ---
-        function playAudioFile(fileName) {
+        async function playAudioFile(fileName) {
             return new Promise((resolve) => {
                 if (!isPlaying) { resolve(); return; }
-                
-                // Thay vì tạo Audio mới, ta cập nhật src của Audio cũ
-                globalAudio.src = SOUND_PATH + fileName;
-                globalAudio.load(); 
-                
-                globalAudio.play().catch(e => {
-                    console.log("Audio skip: " + fileName);
-                    resolve();
-                });
-
+                globalAudio.src = SOUND_PATH + fileName; globalAudio.load();
+                globalAudio.play().catch(() => resolve());
                 globalAudio.onended = () => resolve();
-                globalAudio.onerror = () => resolve();
             });
         }
 
         async function startPlaying() {
             if (isPlaying) return;
             const text = toTelex(realText);
-            if (!text || text.trim() === "") return;
+            if (!text.trim()) return;
 
             isPlaying = true;
             document.getElementById('btnPlay').disabled = true;
 
-            // Unlock audio trên iOS qua một file câm hoặc file AR đầu tiên
-            await playAudioFile("AR.mp3");
-            await new Promise(r => setTimeout(r, speedSettings.charGap));
+            // --- KHOẢNG NGHỈ CHUẨN BỊ (500ms) ---
+            await new Promise(r => setTimeout(r, 500));
 
+            // 1. Phát AR (Bắt đầu)
+            await playAudioFile("AR.mp3");
+            
+            // --- NGHỈ SAU TÍN HIỆU MỞ ĐẦU (600ms) ---
+            await new Promise(r => setTimeout(r, 600));
+
+            // 2. Phát nội dung chính
             const words = text.split(' ');
             for (let i = 0; i < words.length; i++) {
                 if (!isPlaying) break;
-                const chars = words[i].split('');
-                for (let char of chars) {
+                for (let char of words[i]) {
                     if (!isPlaying) break;
-                    if (/^[A-Z0-9]$/.test(char)) {
-                        await playAudioFile(char + ".mp3");
-                        await new Promise(r => setTimeout(r, speedSettings.charGap));
+                    if (morseMap[char]) { 
+                        await playAudioFile(char + ".mp3"); 
+                        await new Promise(r => setTimeout(r, speedSettings.charGap)); 
                     }
                 }
+                // Nghỉ giữa các từ
                 if (i < words.length - 1) await new Promise(r => setTimeout(r, speedSettings.wordGap));
             }
 
+            // 3. Phát NW (Kết thúc)
             if (isPlaying) {
-                await new Promise(r => setTimeout(r, speedSettings.charGap));
+                // --- NGHỈ TRƯỚC TÍN HIỆU KẾT THÚC (800ms) ---
+                await new Promise(r => setTimeout(r, 800));
                 await playAudioFile("NW.mp3");
             }
+
             stopPlaying();
         }
 
-        function stopPlaying() {
-            isPlaying = false;
-            globalAudio.pause();
-            globalAudio.src = ""; // Clear để giải phóng memory trên iOS
-            document.getElementById('btnPlay').disabled = false;
-        }
+        function stopPlaying() { isPlaying = false; globalAudio.pause(); document.getElementById('btnPlay').disabled = false; }
 
         document.getElementById('btnPlay').onclick = startPlaying;
         document.getElementById('btnStop').onclick = stopPlaying;
         document.getElementById('btnReset').onclick = () => { stopPlaying(); setTimeout(startPlaying, 300); };
-        document.getElementById('btnClear').onclick = () => { stopPlaying(); realText = ""; isHidden = false; updateDisplay(); };
-
-        const menuToggle = document.getElementById('menuToggle');
-        const sidebar = document.getElementById('sidebar');
-        menuToggle.onclick = (e) => { sidebar.classList.add('open'); e.stopPropagation(); };
-        document.getElementById('mainContent').onclick = () => sidebar.classList.remove('open');
-        document.getElementById('mainContent').ontouchstart = () => sidebar.classList.remove('open');
-        document.getElementById('btnExpand').onclick = () => { 
-            const telexText = toTelex(realText);
-            const morseSymbols = telexText.split('').map(char => char === ' ' ? ' / ' : (morseMap[char] || '')).join(' ');
-            document.getElementById('fullMorseText').innerText = isHidden ? morseSymbols.replace(/[^\s/]/g, '*') : morseSymbols;
-            document.getElementById('morseModal').style.display = 'flex'; 
+        document.getElementById('btnClear').onclick = () => { 
+            stopPlaying(); 
+            realText = ""; 
+            isHidden = false; 
+            statusHeader.innerText = "HỆ THỐNG MORSE";
+            updateDisplay(); 
         };
-        document.getElementById('btnCloseModal').onclick = () => document.getElementById('morseModal').style.display = 'none';
     </script>
 </body>
 </html>
