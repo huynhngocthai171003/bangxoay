@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cipher Wheel Pro - iOS Fix</title>
+    <title>Cipher Wheel Pro - Auto Hide Toggle</title>
     <style>
         :root {
             --line-color: rgba(255, 255, 255, 0.3);
@@ -14,7 +14,7 @@
             --sidebar-width: 80px;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; }
 
         body {
             display: flex;
@@ -27,10 +27,11 @@
             touch-action: none;
         }
 
-        /* --- DECORATION --- */
+        /* --- TRANG TRÍ NỀN --- */
         .bg-blob {
             position: absolute;
-            width: 300px; height: 300px;
+            width: 300px;
+            height: 300px;
             background: linear-gradient(135deg, #ff0080, #7928ca);
             filter: blur(80px);
             border-radius: 50%;
@@ -51,11 +52,12 @@
             align-items: center;
             padding-top: 40px;
             z-index: 100;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.3s ease;
         }
 
         .menu-item {
             writing-mode: vertical-rl;
+            text-orientation: mixed;
             transform: rotate(180deg);
             padding: 20px 10px;
             margin: 15px 0;
@@ -69,9 +71,12 @@
             white-space: nowrap;
         }
 
-        .menu-item.active { color: #00d2fc; border-right: 3px solid #00d2fc; }
+        .menu-item.active {
+            color: #00d2fc;
+            border-right: 3px solid #00d2fc;
+        }
 
-        /* --- MENU TOGGLE --- */
+        /* --- NÚT TOGGLE TỰ ẨN --- */
         .menu-toggle {
             display: none;
             position: fixed;
@@ -96,18 +101,22 @@
                 transform: translateX(-100%);
             }
             .sidebar.open { transform: translateX(0); }
-            .sidebar.open ~ .menu-toggle { opacity: 0; visibility: hidden; }
+            
+            /* Khi sidebar mở, ẩn nút toggle đi */
+            .sidebar.open ~ .menu-toggle {
+                opacity: 0;
+                visibility: hidden;
+            }
         }
 
-        /* --- KHU VỰC CHÍNH --- */
-        .main-content {
+        /* --- BẢNG XOAY (Giữ nguyên) --- */
+        .main-container {
             flex: 1;
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1;
-            cursor: pointer; /* Cho phép iOS nhận diện chạm vùng nền */
         }
 
         .wheel-stack {
@@ -115,8 +124,7 @@
             width: var(--base-size); height: var(--base-size);
             max-width: 85vw; max-height: 85vw;
             display: flex; justify-content: center; align-items: center;
-            transition: transform 0.3s ease-out;
-            cursor: default; /* Trả về cursor mặc định cho bảng xoay */
+            transition: transform 0.3s ease-out; 
         }
 
         .wheel {
@@ -147,65 +155,55 @@
 </head>
 <body>
 
+    <div class="bg-blob" style="top: -100px; left: -100px;"></div>
+    <div class="bg-blob" style="bottom: -50px; right: 10%; background: linear-gradient(135deg, #00d2fc, #302b63);"></div>
+
     <aside class="sidebar" id="sidebar">
-        <div class="menu-item active">BẢNG XOAY</div>
-        <div class="menu-item" onclick="window.location.href='morse.html'">MORSE</div>
-        <div class="menu-item">CÀI ĐẶT</div>
+        <a href="index.html" class="menu-item active">BẢNG XOAY</a>
+        <a href="morse.html" class="menu-item ">MORSE</a>
+        <a href="semaphore.html" class="menu-item">SEMAPHORE</a>
     </aside>
 
     <button class="menu-toggle" id="menuToggle">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     </button>
 
-    <main class="main-content" id="mainContent">
-        <div id="stack" class="wheel-stack" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+    <div id="master" class="main-container">
+        <div id="stack" class="wheel-stack">
             <div id="outer" class="wheel wheel-outer"></div>
             <div id="middle" class="wheel wheel-middle"></div>
             <div id="inner" class="wheel wheel-inner"></div>
             <div class="center-hole"></div>
         </div>
-    </main>
+    </div>
 
     <script>
-        // --- LOGIC MENU (GIỐNG MORSE.HTML) ---
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-
-        const openMenu = (e) => {
+        
+        // Mở menu
+        menuToggle.addEventListener('click', (e) => {
             sidebar.classList.add('open');
             e.stopPropagation();
-        };
+        });
 
-        const closeMenu = () => {
-            if (sidebar.classList.contains('open')) {
-                sidebar.classList.remove('open');
-            }
-        };
+        // Đóng menu khi chạm vào vùng bảng xoay
+        document.getElementById('master').addEventListener('click', () => {
+            sidebar.classList.remove('open');
+        });
 
-        menuToggle.addEventListener('click', openMenu);
-        mainContent.addEventListener('click', closeMenu);
-        mainContent.addEventListener('touchstart', closeMenu, { passive: true });
-
-        // --- LOGIC BẢNG XOAY ---
+        // Giữ nguyên logic render và xoay của bạn
         const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
         const numbers = Array.from({length: 26}, (_, i) => i + 1);
         const STEP = 360 / 26;
 
         function createRotatable(element, isStack = false) {
             let rotation = 0; let startA = 0; let isDragging = false;
-            
             const getAngle = (x, y) => {
                 const rect = element.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                return Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
+                return Math.atan2(y - (rect.top + rect.height/2), x - (rect.left + rect.width/2)) * 180 / Math.PI;
             };
-
             const down = (e) => {
-                // Không cho xoay nếu menu đang mở
-                if (sidebar.classList.contains('open')) return;
-
                 if (isStack && e.target.classList.contains('wheel')) return;
                 isDragging = true;
                 const p = e.touches ? e.touches[0] : e;
@@ -213,14 +211,12 @@
                 element.style.transition = 'none';
                 if(e.cancelable) e.preventDefault();
             };
-
             const move = (e) => {
                 if (!isDragging) return;
                 const p = e.touches ? e.touches[0] : e;
                 rotation = getAngle(p.clientX, p.clientY) - startA;
                 element.style.transform = `rotate(${rotation}deg)`;
             };
-
             const up = () => {
                 if (!isDragging) return;
                 isDragging = false;
@@ -232,8 +228,7 @@
                     element.style.transition = 'transform 0.3s ease-out';
                 }
             };
-            
-            const target = isStack ? mainContent : element;
+            const target = isStack ? document.getElementById('master') : element;
             target.addEventListener('mousedown', down);
             window.addEventListener('mousemove', move);
             window.addEventListener('mouseup', up);
