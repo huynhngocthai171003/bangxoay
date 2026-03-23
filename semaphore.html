@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mật Thư Pro - Semaphore Stable</title>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-color: #00d2fc;
+            --sidebar-width: 80px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            display: flex; margin: 0; height: 100vh;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Segoe UI', Tahoma, sans-serif; color: white;
+            overflow: hidden; touch-action: none;
+        }
+
+        .bg-blob {
+            position: absolute; width: 300px; height: 300px;
+            background: linear-gradient(135deg, #ff0080, #7928ca);
+            filter: blur(80px); border-radius: 50%; z-index: 0; opacity: 0.3; pointer-events: none;
+        }
+
+        /* --- SIDEBAR & OVERLAY --- */
+        .sidebar {
+            width: var(--sidebar-width); height: 100%;
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex; flex-direction: column; align-items: center; padding-top: 40px;
+            z-index: 1000; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #menuOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 900;
+        }
+        
+        .menu-toggle {
+            display: none; position: fixed; top: 20px; left: 20px; z-index: 200;
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 10px; border-radius: 8px; cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            .sidebar { position: fixed; left: 0; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            #menuOverlay.show { display: block; }
+        }
+
+        .menu-item {
+            writing-mode: vertical-rl; transform: rotate(180deg); padding: 20px 10px; margin: 15px 0;
+            font-size: 0.9rem; letter-spacing: 3px; color: rgba(255, 255, 255, 0.5);
+            cursor: pointer; transition: 0.3s; text-transform: uppercase; text-decoration: none; border-right: 3px solid transparent;
+        }
+        .menu-item.active { color: var(--accent-color); border-right: 3px solid var(--accent-color); }
+
+        /* --- MAIN AREA --- */
+        .main-container {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; z-index: 1;
+        }
+
+        .display-panel {
+            width: 100%; max-width: 450px;
+            background: var(--glass-bg); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 20px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        .status-title {
+            font-size: 1.8rem; font-weight: 900; color: var(--accent-color);
+            text-shadow: 0 0 15px rgba(0,210,252,0.6); height: 60px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 15px; text-transform: uppercase;
+        }
+
+        /* --- TOP OPTIONS BOX (Chỉ còn Word Count và Button) --- */
+        .options-box {
+            display: flex; gap: 8px; align-items: center; margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 12px;
+        }
+        .options-box input {
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 8px; border-radius: 8px; outline: none; font-size: 12px;
+        }
+        .btn-generate {
+            flex: 1; background: var(--accent-color); color: #1a1a2e; border: none;
+            padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .box-title { color: rgba(255,255,255,0.4); font-size: 10px; text-transform: uppercase; text-align: left; margin-bottom: 4px; font-weight: bold; }
+        .row-group { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; width: 100%; position: relative; }
+
+        .fixed-box {
+            flex: 1; width: 0; min-width: 0; height: 42px; 
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px; padding: 0 12px; color: white; font-size: 0.95rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        input.fixed-box { display: block; text-align: center; outline: none; padding-right: 40px; }
+        div.fixed-box { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .telex-style { color: var(--accent-color); font-family: monospace; font-weight: bold;}
+
+        .btn-show-hide {
+            position: absolute; right: 65px; background: none; border: none;
+            color: var(--accent-color); cursor: pointer; font-size: 18px; padding: 5px;
+            z-index: 10;
+        }
+
+        .btn-xem {
+            flex-shrink: 0; height: 42px; padding: 0 12px; background: var(--accent-color); color: #1a1a2e;
+            border: none; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer;
+        }
+
+        .semaphore-screen {
+            width: 100%; height: clamp(160px, 22vh, 200px); margin-bottom: 15px;
+            background: rgba(0,0,0,0.2); border-radius: 15px; border: 1px solid var(--glass-border);
+            display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
+        }
+        .semaphore-img { height: 85%; width: auto; object-fit: contain; transition: opacity 0.1s; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); }
+
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        button.action-btn {
+            padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05); color: white; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; font-size: 12px; transition: 0.2s;
+        }
+        .btn-play { grid-column: span 2; background: var(--accent-color); color: #1a1a2e; }
+        .btn-clear { grid-column: span 2; }
+
+        .speed-box {
+            grid-column: span 2; margin-top: 10px; display: flex; align-items: center; gap: 10px;
+            font-size: 11px; color: rgba(255,255,255,0.4);
+        }
+        input[type="range"] { flex: 1; accent-color: var(--accent-color); cursor: pointer; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 2000; backdrop-filter: blur(10px);
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-content { background: rgba(20, 20, 35, 0.95); border: 1px solid var(--accent-color); border-radius: 20px; width: 100%; max-width: 400px; padding: 25px; }
+        .modal-body { max-height: 50vh; overflow-y: auto; color: white; font-size: 1.1rem; line-height: 1.5; text-align: center; word-break: break-word; }
+        .btn-close { margin-top: 20px; width: 100%; background: var(--accent-color); color: #1a1a2e; border: none; padding: 12px; border-radius: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-blob" style="top: -100px; left: -100px;"></div>
+    <div id="menuOverlay"></div>
+
+    <button class="menu-toggle" id="menuToggle">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+
+    <aside class="sidebar" id="sidebar">
+        <a href="index.html" class="menu-item">Bảng Xoay</a>
+        <a href="morse.html" class="menu-item">Morse</a>
+        <a href="semaphore.html" class="menu-item active">Semaphore</a>
+    </aside>
+
+    <main class="main-container" id="mainContent">
+        <div class="display-panel" onclick="event.stopPropagation()">
+            <div class="status-title" id="statusTitle">READY</div>
+            
+            <div class="options-box">
+                <input type="number" id="wordCountInput" value="5" min="1" max="100" style="width: 60px; text-align: center;">
+                <button id="btnGenerate" class="btn-generate">TẠO NGẪU NHIÊN</button>
+            </div>
+
+            <div class="box-title">MÃ TELEX</div>
+            <div class="row-group">
+                <div class="fixed-box telex-style" id="telexPreview">-</div>
+                <button class="btn-xem" id="btnViewTelex">XEM</button>
+            </div>
+            
+            <div class="box-title">VĂN BẢN GỐC</div>
+            <div class="row-group">
+                <input type="text" id="inputText" class="fixed-box" placeholder="NHẬP CHỮ..." spellcheck="false">
+                <button class="btn-show-hide" id="btnShowHide">👁️</button>
+                <button class="btn-xem" id="btnViewRaw">XEM</button>
+            </div>
+
+            <div class="semaphore-screen">
+                <img id="sema-img" src="img_semaphore/ss.png" alt="" class="semaphore-img">
+            </div>
+
+            <div class="btn-grid">
+                <button id="btnPlay" class="action-btn btn-play">PHÁT BẢN TIN</button>
+                <button id="btnStop" class="action-btn" disabled>DỪNG</button>
+                <button id="btnReplay" class="action-btn">PHÁT LẠI</button>
+                <button id="btnClear" class="action-btn btn-clear">XÓA BẢN TIN</button>
+
+                <div class="speed-box">
+                    <span>TỐC ĐỘ:</span>
+                    <input type="range" id="speedRange" min="500" max="2500" step="100" value="1200" dir="rtl">
+                    <b id="speedVal">1.2s</b>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="infoModal">
+        <div class="modal-content">
+            <div class="modal-body" id="modalBody"></div>
+            <button class="btn-close" id="btnClose">ĐÓNG</button>
+        </div>
+    </div>
+
+    <script>
+        const menuToggle = document.getElementById('menuToggle'), sidebar = document.getElementById('sidebar'), overlay = document.getElementById('menuOverlay');
+        const statusTitle = document.getElementById('statusTitle'), semaImg = document.getElementById('sema-img'), input = document.getElementById('inputText');
+        const telexPreview = document.getElementById('telexPreview'), speedRange = document.getElementById('speedRange'), speedVal = document.getElementById('speedVal');
+        const btnPlay = document.getElementById('btnPlay'), btnStop = document.getElementById('btnStop'), btnClear = document.getElementById('btnClear'), btnShowHide = document.getElementById('btnShowHide');
+
+        const telexMap = { 'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ằ':'aw','ắ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ầ':'aa','ấ':'aa','ẩ':'aa','ẫ':'aa','ậ':'aa','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ề':'ee','ế':'ee','ể':'ee','ễ':'ee','ệ':'ee','ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i','ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ồ':'oo','ố':'oo','ổ':'oo','ỗ':'oo','ộ':'oo','ờ':'ow','ớ':'ow','ở':'ow','ỡ':'ow','ợ':'ow','ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ừ':'uw','ứ':'uw','ử':'uw','ữ':'uw','ự':'uw','ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y','đ':'dd','â':'aa','ă':'aw','ê':'ee','ô':'oo','ơ':'ow','ư':'uw' };
+        const toneMap = { 'á':'s','à':'f','ả':'r','ã':'x','ạ':'j','ắ':'s','ằ':'f','ẳ':'r','ẵ':'x','ặ':'j','ấ':'s','ầ':'f','ẩ':'r','ẫ':'x','ặ':'j','é':'s','è':'f','ẻ':'r','ẽ':'x','ẹ':'j','ế':'s','ề':'f','ể':'r','ễ':'x','ệ':'j','í':'s','ì':'f','ỉ':'r','ĩ':'x','ị':'j','ó':'s','ò':'f','ỏ':'r','õ':'x','ọ':'j','ố':'s','ồ':'f','ổ':'r','ỗ':'x','ộ':'j','ớ':'s','ờ':'f','ở':'r','ỡ':'x','ợ':'j','ú':'s','ù':'f','ủ':'r','ũ':'x','ụ':'j','ứ':'s','ừ':'f','ử':'r','ữ':'x','ự':'j','ý':'s','ỳ':'f','ỷ':'r','ỹ':'x','ỵ':'j' };
+
+        let isPlaying = false, stopRequested = false, isHidden = false, realText = "";
+
+        menuToggle.onclick = (e) => { sidebar.classList.add('open'); overlay.classList.add('show'); e.stopPropagation(); }
+        overlay.onclick = () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+
+        function toTelexArray(str) {
+            let result = []; const words = str.trim().toLowerCase().split(/\s+/);
+            if(!str.trim()) return [];
+            words.forEach((word, index) => {
+                let newWordChars = [], tones = "";
+                for (let char of word) {
+                    if (telexMap[char]) newWordChars.push(...telexMap[char].split(''));
+                    else if(/[a-z0-9]/.test(char)) newWordChars.push(char);
+                    if (toneMap[char]) tones += toneMap[char];
+                }
+                result.push(...newWordChars, ...tones.split(''));
+                if (index < words.length - 1) result.push('SPACE');
+            });
+            return result;
+        }
+
+        function updateDisplay() {
+            const arr = toTelexArray(realText);
+            const telexFull = arr.map(c => c === 'SPACE' ? '/' : c.toUpperCase()).join(' ');
+
+            if (isHidden) {
+                input.value = realText.replace(/[^\s]/g, '*');
+                telexPreview.innerText = telexFull.replace(/[^\s/]/g, '*');
+            } else {
+                input.value = realText;
+                telexPreview.innerText = telexFull || "-";
+            }
+        }
+
+        input.oninput = () => {
+            realText = input.value;
+            isHidden = false;
+            statusTitle.innerText = "READY"; 
+            updateDisplay();
+        };
+
+        btnShowHide.onclick = () => {
+            isHidden = !isHidden;
+            updateDisplay();
+        };
+
+        speedRange.oninput = () => speedVal.innerText = (speedRange.value / 1000).toFixed(1) + 's';
+
+        const modal = document.getElementById('infoModal'), modalBody = document.getElementById('modalBody');
+        document.getElementById('btnViewTelex').onclick = () => { 
+            const arr = toTelexArray(realText);
+            const telexStr = arr.map(c => c === 'SPACE' ? '/' : c.toUpperCase()).join(' ');
+            modalBody.innerText = isHidden ? telexStr.replace(/[^\s/]/g, '*') : (telexStr || "-");
+            modal.style.display = "flex"; 
+        }
+        document.getElementById('btnViewRaw').onclick = () => { 
+            modalBody.innerText = isHidden ? realText.replace(/[^\s]/g, '*') : (realText || "(Trống)"); 
+            modal.style.display = "flex"; 
+        }
+        document.getElementById('btnClose').onclick = () => modal.style.display = "none";
+
+        async function blinkSignal() {
+            for(let i=0; i<3; i++) {
+                if(stopRequested) break;
+                statusTitle.innerText = isHidden ? "NGẪU NHIÊN" : "ATTENTION";
+                semaImg.src = `img_semaphore/start.png`;
+                semaImg.style.opacity = 1;
+                await new Promise(r => setTimeout(r, 400));
+                semaImg.style.opacity = 0;
+                await new Promise(r => setTimeout(r, 200));
+            }
+        }
+
+        async function playTin() {
+            if (!realText.trim() || isPlaying) return;
+            isPlaying = true; stopRequested = false; btnPlay.disabled = true; btnStop.disabled = false;
+            
+            await blinkSignal();
+
+            if (!stopRequested) {
+                semaImg.src = `img_semaphore/ss.png`;
+                semaImg.style.opacity = 1;
+                await new Promise(r => setTimeout(r, 600));
+            }
+
+            const sequence = toTelexArray(realText);
+            for (let char of sequence) {
+                if (stopRequested) break;
+                
+                if (isHidden) {
+                    statusTitle.innerText = "NGẪU NHIÊN";
+                } else {
+                    statusTitle.innerText = char === 'SPACE' ? "NEXT WORD" : char.toUpperCase();
+                }
+
+                if (char === 'SPACE') { 
+                    semaImg.src = `img_semaphore/ss.png`; 
+                } else { 
+                    semaImg.src = `img_semaphore/${char.toLowerCase()}.png`; 
+                }
+                semaImg.style.opacity = 1;
+                await new Promise(r => setTimeout(r, parseInt(speedRange.value)));
+                semaImg.style.opacity = 0;
+                await new Promise(r => setTimeout(r, 150));
+            }
+            if (!stopRequested) await blinkSignal();
+            resetState();
+        }
+
+        function resetState() { 
+            isPlaying = false; btnPlay.disabled = false; btnStop.disabled = true; 
+            statusTitle.innerText = isHidden ? "NGẪU NHIÊN" : "READY";
+            semaImg.src = `img_semaphore/ss.png`; 
+            semaImg.style.opacity = 1;
+        }
+
+        btnPlay.onclick = playTin;
+        btnStop.onclick = () => { stopRequested = true; resetState(); };
+        document.getElementById('btnReplay').onclick = () => !isPlaying && playTin();
+        
+        btnClear.onclick = () => {
+            stopRequested = true; realText = ""; isHidden = false;
+            statusTitle.innerText = "READY";
+            updateDisplay(); resetState();
+        };
+
+        document.getElementById('btnGenerate').onclick = async () => {
+            try {
+                const response = await fetch('random.txt?v=' + Math.random());
+                const rawText = await response.text();
+                const allWords = rawText.split(/\s+/).map(w => w.replace(/[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/g, '').trim()).filter(w => w.length >= 2);
+                if (allWords.length === 0) return;
+                const count = parseInt(document.getElementById('wordCountInput').value) || 5;
+                let selected = [];
+                for (let i = 0; i < count; i++) selected.push(allWords[Math.floor(Math.random() * allWords.length)]);
+                
+                realText = selected.join(' ');
+                isHidden = true;
+                statusTitle.innerText = "NGẪU NHIÊN";
+                updateDisplay();
+            } catch (err) { alert("Lỗi tải file"); }
+        };
+    </script>
+</body>
+</html>
