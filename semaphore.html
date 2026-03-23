@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mật Thư Pro - Semaphore Stable</title>
+    <title>Mật Thư Pro - Semaphore Studio</title>
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.05);
@@ -79,7 +79,6 @@
             margin-bottom: 15px; text-transform: uppercase;
         }
 
-        /* --- TOP OPTIONS BOX (Chỉ còn Word Count và Button) --- */
         .options-box {
             display: flex; gap: 8px; align-items: center; margin-bottom: 15px;
             background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 12px;
@@ -91,8 +90,9 @@
         .btn-generate {
             flex: 1; background: var(--accent-color); color: #1a1a2e; border: none;
             padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px;
-            text-transform: uppercase;
+            text-transform: uppercase; transition: 0.3s;
         }
+        .btn-generate:active { transform: scale(0.95); opacity: 0.8; }
 
         .box-title { color: rgba(255,255,255,0.4); font-size: 10px; text-transform: uppercase; text-align: left; margin-bottom: 4px; font-weight: bold; }
         .row-group { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; width: 100%; position: relative; }
@@ -124,16 +124,30 @@
             background: rgba(0,0,0,0.2); border-radius: 15px; border: 1px solid var(--glass-border);
             display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
         }
-        .semaphore-img { height: 85%; width: auto; object-fit: contain; transition: opacity 0.1s; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); }
+        .semaphore-img { height: 85%; width: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4)); }
 
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
         button.action-btn {
             padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.05); color: white; font-weight: bold; cursor: pointer;
-            text-transform: uppercase; font-size: 12px; transition: 0.2s;
+            text-transform: uppercase; font-size: 12px; transition: 0.3s;
         }
-        .btn-play { grid-column: span 2; background: var(--accent-color); color: #1a1a2e; }
+        
+        /* Hiệu ứng Active cho Button */
+        button.action-btn.active {
+            background: var(--accent-color) !important;
+            color: #1a1a2e !important;
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        .btn-play { grid-column: span 2; }
         .btn-clear { grid-column: span 2; }
+        
+        button:disabled { 
+            opacity: 0.2; 
+            cursor: not-allowed; 
+            filter: grayscale(1);
+        }
 
         .speed-box {
             grid-column: span 2; margin-top: 10px; display: flex; align-items: center; gap: 10px;
@@ -215,18 +229,35 @@
     </div>
 
     <script>
-        const menuToggle = document.getElementById('menuToggle'), sidebar = document.getElementById('sidebar'), overlay = document.getElementById('menuOverlay');
         const statusTitle = document.getElementById('statusTitle'), semaImg = document.getElementById('sema-img'), input = document.getElementById('inputText');
         const telexPreview = document.getElementById('telexPreview'), speedRange = document.getElementById('speedRange'), speedVal = document.getElementById('speedVal');
-        const btnPlay = document.getElementById('btnPlay'), btnStop = document.getElementById('btnStop'), btnClear = document.getElementById('btnClear'), btnShowHide = document.getElementById('btnShowHide');
-
-        const telexMap = { 'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ằ':'aw','ắ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ầ':'aa','ấ':'aa','ẩ':'aa','ẫ':'aa','ậ':'aa','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ề':'ee','ế':'ee','ể':'ee','ễ':'ee','ệ':'ee','ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i','ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ồ':'oo','ố':'oo','ổ':'oo','ỗ':'oo','ộ':'oo','ờ':'ow','ớ':'ow','ở':'ow','ỡ':'ow','ợ':'ow','ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ừ':'uw','ứ':'uw','ử':'uw','ữ':'uw','ự':'uw','ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y','đ':'dd','â':'aa','ă':'aw','ê':'ee','ô':'oo','ơ':'ow','ư':'uw' };
-        const toneMap = { 'á':'s','à':'f','ả':'r','ã':'x','ạ':'j','ắ':'s','ằ':'f','ẳ':'r','ẵ':'x','ặ':'j','ấ':'s','ầ':'f','ẩ':'r','ẫ':'x','ặ':'j','é':'s','è':'f','ẻ':'r','ẽ':'x','ẹ':'j','ế':'s','ề':'f','ể':'r','ễ':'x','ệ':'j','í':'s','ì':'f','ỉ':'r','ĩ':'x','ị':'j','ó':'s','ò':'f','ỏ':'r','õ':'x','ọ':'j','ố':'s','ồ':'f','ổ':'r','ỗ':'x','ộ':'j','ớ':'s','ờ':'f','ở':'r','ỡ':'x','ợ':'j','ú':'s','ù':'f','ủ':'r','ũ':'x','ụ':'j','ứ':'s','ừ':'f','ử':'r','ữ':'x','ự':'j','ý':'s','ỳ':'f','ỷ':'r','ỹ':'x','ỵ':'j' };
+        const btnPlay = document.getElementById('btnPlay'), btnStop = document.getElementById('btnStop'), btnReplay = document.getElementById('btnReplay'), btnClear = document.getElementById('btnClear'), btnShowHide = document.getElementById('btnShowHide');
 
         let isPlaying = false, stopRequested = false, isHidden = false, realText = "";
 
-        menuToggle.onclick = (e) => { sidebar.classList.add('open'); overlay.classList.add('show'); e.stopPropagation(); }
-        overlay.onclick = () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+        // --- TỐI ƯU LOAD ẢNH: PRELOAD TOÀN BỘ VÀO CACHE ---
+        const preloadImages = () => {
+            const chars = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
+            const extras = ["start", "ss"];
+            [...chars, ...extras].forEach(char => {
+                const img = new Image();
+                img.src = `img_semaphore/${char}.png`;
+            });
+        };
+        preloadImages();
+
+        // --- QUẢN LÝ TRẠNG THÁI NÚT ---
+        function setUIState(playing) {
+            isPlaying = playing;
+            btnPlay.disabled = playing;
+            btnReplay.disabled = playing;
+            btnStop.disabled = !playing;
+            if(playing) btnPlay.classList.add('active');
+            else btnPlay.classList.remove('active');
+        }
+
+        const telexMap = { 'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ằ':'aw','ắ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ầ':'aa','ấ':'aa','ẩ':'aa','ẫ':'aa','ậ':'aa','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ề':'ee','ế':'ee','ể':'ee','ễ':'ee','ệ':'ee','ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i','ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ồ':'oo','ố':'oo','ổ':'oo','ỗ':'oo','ộ':'oo','ờ':'ow','ớ':'ow','ở':'ow','ỡ':'ow','ợ':'ow','ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ừ':'uw','ứ':'uw','ử':'uw','ữ':'uw','ự':'uw','ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y','đ':'dd','â':'aa','ă':'aw','ê':'ee','ô':'oo','ơ':'ow','ư':'uw' };
+        const toneMap = { 'á':'s','à':'f','ả':'r','ã':'x','ạ':'j','ắ':'s','ằ':'f','ẳ':'r','ẵ':'x','ặ':'j','ấ':'s','ầ':'f','ẩ':'r','ẫ':'x','ặ':'j','é':'s','è':'f','ẻ':'r','ẽ':'x','ẹ':'j','ế':'s','ề':'f','ể':'r','ễ':'x','ệ':'j','í':'s','ì':'f','ỉ':'r','ĩ':'x','ị':'j','ó':'s','ò':'f','ỏ':'r','õ':'x','ọ':'j','ồ':'f','ổ':'r','ỗ':'x','ộ':'j','ớ':'s','ờ':'f','ở':'r','ỡ':'x','ợ':'j','ú':'s','ù':'f','ủ':'r','ũ':'x','ụ':'j','ứ':'s','ừ':'f','ử':'r','ữ':'x','ự':'j','ý':'s','ỳ':'f','ỷ':'r','ỹ':'x','ỵ':'j' };
 
         function toTelexArray(str) {
             let result = []; const words = str.trim().toLowerCase().split(/\s+/);
@@ -247,7 +278,6 @@
         function updateDisplay() {
             const arr = toTelexArray(realText);
             const telexFull = arr.map(c => c === 'SPACE' ? '/' : c.toUpperCase()).join(' ');
-
             if (isHidden) {
                 input.value = realText.replace(/[^\s]/g, '*');
                 telexPreview.innerText = telexFull.replace(/[^\s/]/g, '*');
@@ -257,97 +287,64 @@
             }
         }
 
-        input.oninput = () => {
-            realText = input.value;
-            isHidden = false;
-            statusTitle.innerText = "READY"; 
-            updateDisplay();
-        };
-
-        btnShowHide.onclick = () => {
-            isHidden = !isHidden;
-            updateDisplay();
-        };
-
+        input.oninput = () => { realText = input.value; isHidden = false; statusTitle.innerText = "READY"; updateDisplay(); };
+        btnShowHide.onclick = () => { isHidden = !isHidden; updateDisplay(); };
         speedRange.oninput = () => speedVal.innerText = (speedRange.value / 1000).toFixed(1) + 's';
-
-        const modal = document.getElementById('infoModal'), modalBody = document.getElementById('modalBody');
-        document.getElementById('btnViewTelex').onclick = () => { 
-            const arr = toTelexArray(realText);
-            const telexStr = arr.map(c => c === 'SPACE' ? '/' : c.toUpperCase()).join(' ');
-            modalBody.innerText = isHidden ? telexStr.replace(/[^\s/]/g, '*') : (telexStr || "-");
-            modal.style.display = "flex"; 
-        }
-        document.getElementById('btnViewRaw').onclick = () => { 
-            modalBody.innerText = isHidden ? realText.replace(/[^\s]/g, '*') : (realText || "(Trống)"); 
-            modal.style.display = "flex"; 
-        }
-        document.getElementById('btnClose').onclick = () => modal.style.display = "none";
 
         async function blinkSignal() {
             for(let i=0; i<3; i++) {
                 if(stopRequested) break;
                 statusTitle.innerText = isHidden ? "NGẪU NHIÊN" : "ATTENTION";
                 semaImg.src = `img_semaphore/start.png`;
-                semaImg.style.opacity = 1;
                 await new Promise(r => setTimeout(r, 400));
-                semaImg.style.opacity = 0;
+                semaImg.src = `img_semaphore/ss.png`;
                 await new Promise(r => setTimeout(r, 200));
             }
         }
 
         async function playTin() {
             if (!realText.trim() || isPlaying) return;
-            isPlaying = true; stopRequested = false; btnPlay.disabled = true; btnStop.disabled = false;
+            setUIState(true);
+            stopRequested = false;
             
             await blinkSignal();
 
             if (!stopRequested) {
                 semaImg.src = `img_semaphore/ss.png`;
-                semaImg.style.opacity = 1;
                 await new Promise(r => setTimeout(r, 600));
             }
 
             const sequence = toTelexArray(realText);
             for (let char of sequence) {
                 if (stopRequested) break;
+                statusTitle.innerText = isHidden ? "NGẪU NHIÊN" : (char === 'SPACE' ? "NEXT WORD" : char.toUpperCase());
                 
-                if (isHidden) {
-                    statusTitle.innerText = "NGẪU NHIÊN";
-                } else {
-                    statusTitle.innerText = char === 'SPACE' ? "NEXT WORD" : char.toUpperCase();
-                }
-
-                if (char === 'SPACE') { 
-                    semaImg.src = `img_semaphore/ss.png`; 
-                } else { 
-                    semaImg.src = `img_semaphore/${char.toLowerCase()}.png`; 
-                }
-                semaImg.style.opacity = 1;
+                // Ép trình duyệt nhận diện thay đổi ảnh kể cả khi cùng 1 tư thế
+                semaImg.src = ""; 
+                semaImg.src = `img_semaphore/${char === 'SPACE' ? 'ss' : char.toLowerCase()}.png`;
+                
                 await new Promise(r => setTimeout(r, parseInt(speedRange.value)));
-                semaImg.style.opacity = 0;
-                await new Promise(r => setTimeout(r, 150));
+                
+                // Nhịp nghỉ cực ngắn để mắt nhận diện chuyển động
+                const tempSrc = semaImg.src;
+                semaImg.style.opacity = "0.7"; 
+                await new Promise(r => setTimeout(r, 50)); 
+                semaImg.style.opacity = "1";
             }
             if (!stopRequested) await blinkSignal();
             resetState();
         }
 
         function resetState() { 
-            isPlaying = false; btnPlay.disabled = false; btnStop.disabled = true; 
+            setUIState(false);
             statusTitle.innerText = isHidden ? "NGẪU NHIÊN" : "READY";
             semaImg.src = `img_semaphore/ss.png`; 
-            semaImg.style.opacity = 1;
         }
 
         btnPlay.onclick = playTin;
         btnStop.onclick = () => { stopRequested = true; resetState(); };
-        document.getElementById('btnReplay').onclick = () => !isPlaying && playTin();
-        
-        btnClear.onclick = () => {
-            stopRequested = true; realText = ""; isHidden = false;
-            statusTitle.innerText = "READY";
-            updateDisplay(); resetState();
-        };
+        btnReplay.onclick = () => !isPlaying && playTin();
+        btnClear.onclick = () => { stopRequested = true; realText = ""; isHidden = false; statusTitle.innerText = "READY"; updateDisplay(); resetState(); };
 
         document.getElementById('btnGenerate').onclick = async () => {
             try {
@@ -358,13 +355,18 @@
                 const count = parseInt(document.getElementById('wordCountInput').value) || 5;
                 let selected = [];
                 for (let i = 0; i < count; i++) selected.push(allWords[Math.floor(Math.random() * allWords.length)]);
-                
-                realText = selected.join(' ');
-                isHidden = true;
-                statusTitle.innerText = "NGẪU NHIÊN";
-                updateDisplay();
+                realText = selected.join(' '); isHidden = true; statusTitle.innerText = "NGẪU NHIÊN"; updateDisplay();
             } catch (err) { alert("Lỗi tải file"); }
         };
+        
+        // Modal & Sidebar (Giữ nguyên logic cũ)
+        const menuToggle = document.getElementById('menuToggle'), sidebar = document.getElementById('sidebar'), overlay = document.getElementById('menuOverlay');
+        menuToggle.onclick = (e) => { sidebar.classList.add('open'); overlay.classList.add('show'); e.stopPropagation(); }
+        overlay.onclick = () => { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+        const modal = document.getElementById('infoModal'), modalBody = document.getElementById('modalBody');
+        document.getElementById('btnViewTelex').onclick = () => { const arr = toTelexArray(realText); const telexStr = arr.map(c => c === 'SPACE' ? '/' : c.toUpperCase()).join(' '); modalBody.innerText = isHidden ? telexStr.replace(/[^\s/]/g, '*') : (telexStr || "-"); modal.style.display = "flex"; }
+        document.getElementById('btnViewRaw').onclick = () => { modalBody.innerText = isHidden ? realText.replace(/[^\s]/g, '*') : (realText || "(Trống)"); modal.style.display = "flex"; }
+        document.getElementById('btnClose').onclick = () => modal.style.display = "none";
     </script>
 </body>
 </html>
