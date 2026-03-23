@@ -81,8 +81,9 @@
         .btn-generate {
             flex: 1; background: var(--accent); color: #1a1a2e; border: none;
             padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px;
-            text-transform: uppercase;
+            text-transform: uppercase; transition: 0.3s;
         }
+        .btn-generate:active { transform: scale(0.95); opacity: 0.8; }
 
         .box-title { color: rgba(255,255,255,0.4); font-size: 10px; text-transform: uppercase; text-align: left; margin-bottom: 3px; font-weight: bold; }
         .row-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; width: 100%; position: relative; }
@@ -117,16 +118,36 @@
         }
         .btn-expand-morse { position: absolute; bottom: 8px; right: 8px; background: var(--accent); color: #1a1a2e; border: none; border-radius: 5px; font-size: 9px; padding: 4px 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
 
+        /* --- BUTTONS CONTROLS --- */
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button.action-btn { 
+            background: rgba(255, 255, 255, 0.1); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            color: white; padding: 12px; border-radius: 10px; 
+            cursor: pointer; font-weight: bold; transition: 0.3s; 
+            text-transform: uppercase; font-size: 12px; 
+        }
+        
+        button.action-btn.active {
+            background: var(--accent) !important;
+            color: #1a1a2e !important;
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .btn-play { grid-column: span 2; }
+        .btn-clear { grid-column: span 2; }
+
+        button:disabled { 
+            opacity: 0.2; 
+            cursor: not-allowed; 
+            filter: grayscale(1);
+        }
+
         /* --- MODAL --- */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; backdrop-filter: blur(10px); justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: rgba(20, 20, 35, 0.95); border: 1px solid var(--accent); border-radius: 20px; width: 100%; max-width: 450px; padding: 25px; display: flex; flex-direction: column; }
         .modal-body { max-height: 50vh; overflow-y: auto; color: white; font-size: 1.1rem; line-height: 1.5; text-align: center; word-break: break-word; }
         .btn-close { margin-top: 20px; width: 100%; background: var(--accent); color: #1a1a2e; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        button.action-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; text-transform: uppercase; font-size: 12px; }
-        button.action-btn:hover:not(:disabled) { background: var(--accent); color: #1a1a2e; }
-        .btn-play { grid-column: span 2; background: var(--accent); color: #1a1a2e; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -176,11 +197,11 @@
                 <button class="btn-expand-morse" id="btnExpandMorse">XEM MÃ</button>
             </div>
             
-            <div class="controls">
+            <div class="btn-grid controls">
                 <button id="btnPlay" class="action-btn btn-play">PHÁT BẢN TIN</button>
-                <button id="btnStop" class="action-btn">DỪNG</button>
+                <button id="btnStop" class="action-btn" disabled>DỪNG</button>
                 <button id="btnReset" class="action-btn">PHÁT LẠI</button>
-                <button id="btnClear" class="action-btn" style="grid-column: span 2;">XÓA BẢN TIN</button>
+                <button id="btnClear" class="action-btn btn-clear">XÓA BẢN TIN</button>
             </div>
         </div>
     </main>
@@ -207,10 +228,21 @@
         const globalAudio = new Audio();
 
         const input = document.getElementById('inputText'), telexPreview = document.getElementById('telexPreview'), output = document.getElementById('outputMorse'), statusHeader = document.getElementById('statusHeader'), btnShowHide = document.getElementById('btnShowHide');
+        const btnPlay = document.getElementById('btnPlay'), btnStop = document.getElementById('btnStop'), btnReset = document.getElementById('btnReset');
+
+        // --- QUẢN LÝ UI STATE ---
+        function setUIState(playing) {
+            isPlaying = playing;
+            btnPlay.disabled = playing;
+            btnReset.disabled = playing;
+            btnStop.disabled = !playing;
+            if(playing) btnPlay.classList.add('active');
+            else btnPlay.classList.remove('active');
+        }
 
         function toTelex(str) {
             const charMap = {'à':'a','á':'a','ả':'a','ã':'a','ạ':'a','ằ':'aw','ắ':'aw','ẳ':'aw','ẵ':'aw','ặ':'aw','ầ':'aa','ấ':'aa','ẩ':'aa','ẫ':'aa','ậ':'aa','è':'e','é':'e','ẻ':'e','ẽ':'e','ẹ':'e','ề':'ee','ế':'ee','ể':'ee','ễ':'ee','ệ':'ee','ì':'i','í':'i','ỉ':'i','ĩ':'i','ị':'i','ò':'o','ó':'o','ỏ':'o','õ':'o','ọ':'o','ồ':'oo','ố':'oo','ổ':'oo','ỗ':'oo','ộ':'oo','ờ':'ow','ớ':'ow','ở':'ow','ỡ':'ow','ợ':'ow','ù':'u','ú':'u','ủ':'u','ũ':'u','ụ':'u','ừ':'uw','ứ':'uw','ử':'uw','ữ':'uw','ự':'uw','ỳ':'y','ý':'y','ỷ':'y','ỹ':'y','ỵ':'y','đ':'dd','â':'aa','ă':'aw','ê':'ee','ô':'oo','ơ':'ow','ư':'uw'};
-            const toneMap = {'á':'s','à':'f','ả':'r','ã':'x','ạ':'j','ắ':'s','ằ':'f','ẳ':'r','ẵ':'x','ặ':'j','ấ':'s','ầ':'f','ẩ':'r','ẫ':'x','ậ':'j','é':'s','è':'f','ẻ':'r','ẽ':'x','ẹ':'j','ế':'s','ề':'f','ể':'r','ễ':'x','ệ':'j','í':'s','ì':'f','ỉ':'r','ĩ':'x','ị':'j','ó':'s','ò':'f','ỏ':'r','õ':'x','ọ':'j','ố':'s','ồ':'f','ổ':'r','ỗ':'x','ộ':'j','ớ':'s','ờ':'f','ở':'r','ỡ':'x','ợ':'j','ú':'s','ù':'f','ủ':'r','ũ':'x','ụ':'j','ứ':'s','ừ':'f','ử':'r','ữ':'x','ự':'j','ý':'s','ỳ':'f','ỷ':'r','ỹ':'x','ỵ':'j'};
+            const toneMap = {'á':'s','à':'f','ả':'r','ã':'x','ạ':'j','ắ':'s','ằ':'f','ẳ':'r','ẵ':'x','ặ':'j','ấ':'s','ầ':'f','ẩ':'r','ẫ':'x','ậ':'j','é':'s','è':'f','ẻ':'r','ẽ':'x','ẹ':'j','ế':'s','ề':'f','ể':'r','ẽ':'x','ẹ':'j','í':'s','ì':'f','ỉ':'r','ĩ':'x','ị':'j','ó':'s','ò':'f','ỏ':'r','õ':'x','ọ':'j','ố':'s','ồ':'f','ổ':'r','ỗ':'x','ộ':'j','ớ':'s','ờ':'f','ở':'r','ỡ':'x','ợ':'j','ú':'s','ù':'f','ủ':'r','ũ':'x','ụ':'j','ứ':'s','ừ':'f','ử':'r','ữ':'x','ự':'j','ý':'s','ỳ':'f','ỷ':'r','ỹ':'x','ỵ':'j'};
             return str.toLowerCase().split(' ').map(word => {
                 let newWord = ""; let tones = "";
                 for (let char of word) {
@@ -224,7 +256,6 @@
         function updateDisplay() {
             const telexText = toTelex(realText);
             const morseSymbols = telexText.split('').map(char => char === ' ' ? ' / ' : (morseMap[char] || '')).join(' ');
-            
             if (isHidden) {
                 input.value = realText.replace(/[^\s]/g, '*');
                 telexPreview.innerText = telexText.replace(/[^\s/]/g, '*');
@@ -236,32 +267,13 @@
             }
         }
 
-        input.addEventListener('input', () => { 
-            realText = input.value; 
-            isHidden = false; 
-            statusHeader.innerText = "HỆ THỐNG MORSE";
-            updateDisplay(); 
-        });
-
-        btnShowHide.onclick = () => {
-            isHidden = !isHidden;
-            updateDisplay();
-        };
+        input.addEventListener('input', () => { realText = input.value; isHidden = false; statusHeader.innerText = "HỆ THỐNG MORSE"; updateDisplay(); });
+        btnShowHide.onclick = () => { isHidden = !isHidden; updateDisplay(); };
 
         const modal = document.getElementById('infoModal'), modalBody = document.getElementById('modalBody');
-        document.getElementById('btnViewTelex').onclick = () => { 
-            const telex = toTelex(realText);
-            modalBody.innerText = isHidden ? telex.replace(/[^\s/]/g, '*') : (telex || "-"); 
-            modal.style.display = "flex"; 
-        }
-        document.getElementById('btnViewRaw').onclick = () => { 
-            modalBody.innerText = isHidden ? realText.replace(/[^\s]/g, '*') : (realText || "(Trống)"); 
-            modal.style.display = "flex"; 
-        }
-        document.getElementById('btnExpandMorse').onclick = () => { 
-            modalBody.innerText = output.innerText; 
-            modal.style.display = "flex"; 
-        }
+        document.getElementById('btnViewTelex').onclick = () => { const telex = toTelex(realText); modalBody.innerText = isHidden ? telex.replace(/[^\s/]/g, '*') : (telex || "-"); modal.style.display = "flex"; }
+        document.getElementById('btnViewRaw').onclick = () => { modalBody.innerText = isHidden ? realText.replace(/[^\s]/g, '*') : (realText || "(Trống)"); modal.style.display = "flex"; }
+        document.getElementById('btnExpandMorse').onclick = () => { modalBody.innerText = output.innerText; modal.style.display = "flex"; }
         document.getElementById('btnCloseModal').onclick = () => modal.style.display = "none";
 
         document.getElementById('btnGenerate').onclick = async () => {
@@ -272,10 +284,7 @@
                 const count = parseInt(document.getElementById('wordCountInput').value) || 5;
                 let selected = [];
                 for (let i = 0; i < count; i++) selected.push(allWords[Math.floor(Math.random() * allWords.length)]);
-                realText = selected.join(' '); 
-                isHidden = true;
-                statusHeader.innerText = "CHẾ ĐỘ NGẪU NHIÊN";
-                updateDisplay();
+                realText = selected.join(' '); isHidden = true; statusHeader.innerText = "CHẾ ĐỘ NGẪU NHIÊN"; updateDisplay();
             } catch (err) { alert("Lỗi tải file"); }
         };
 
@@ -299,56 +308,31 @@
             if (isPlaying) return;
             const text = toTelex(realText);
             if (!text.trim()) return;
+            setUIState(true);
 
-            isPlaying = true;
-            document.getElementById('btnPlay').disabled = true;
-
-            // --- KHOẢNG NGHỈ CHUẨN BỊ (500ms) ---
             await new Promise(r => setTimeout(r, 500));
-
-            // 1. Phát AR (Bắt đầu)
             await playAudioFile("AR.mp3");
-            
-            // --- NGHỈ SAU TÍN HIỆU MỞ ĐẦU (600ms) ---
             await new Promise(r => setTimeout(r, 600));
 
-            // 2. Phát nội dung chính
             const words = text.split(' ');
             for (let i = 0; i < words.length; i++) {
                 if (!isPlaying) break;
                 for (let char of words[i]) {
                     if (!isPlaying) break;
-                    if (morseMap[char]) { 
-                        await playAudioFile(char + ".mp3"); 
-                        await new Promise(r => setTimeout(r, speedSettings.charGap)); 
-                    }
+                    if (morseMap[char]) { await playAudioFile(char + ".mp3"); await new Promise(r => setTimeout(r, speedSettings.charGap)); }
                 }
-                // Nghỉ giữa các từ
                 if (i < words.length - 1) await new Promise(r => setTimeout(r, speedSettings.wordGap));
             }
-
-            // 3. Phát NW (Kết thúc)
-            if (isPlaying) {
-                // --- NGHỈ TRƯỚC TÍN HIỆU KẾT THÚC (800ms) ---
-                await new Promise(r => setTimeout(r, 800));
-                await playAudioFile("NW.mp3");
-            }
-
+            if (isPlaying) { await new Promise(r => setTimeout(r, 800)); await playAudioFile("NW.mp3"); }
             stopPlaying();
         }
 
-        function stopPlaying() { isPlaying = false; globalAudio.pause(); document.getElementById('btnPlay').disabled = false; }
+        function stopPlaying() { isPlaying = false; globalAudio.pause(); setUIState(false); }
 
-        document.getElementById('btnPlay').onclick = startPlaying;
-        document.getElementById('btnStop').onclick = stopPlaying;
-        document.getElementById('btnReset').onclick = () => { stopPlaying(); setTimeout(startPlaying, 300); };
-        document.getElementById('btnClear').onclick = () => { 
-            stopPlaying(); 
-            realText = ""; 
-            isHidden = false; 
-            statusHeader.innerText = "HỆ THỐNG MORSE";
-            updateDisplay(); 
-        };
+        btnPlay.onclick = startPlaying;
+        btnStop.onclick = stopPlaying;
+        btnReset.onclick = () => { stopPlaying(); setTimeout(startPlaying, 300); };
+        document.getElementById('btnClear').onclick = () => { stopPlaying(); realText = ""; isHidden = false; statusHeader.innerText = "HỆ THỐNG MORSE"; updateDisplay(); };
     </script>
 </body>
 </html>
