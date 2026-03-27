@@ -27,39 +27,78 @@
             filter: blur(80px); border-radius: 50%; z-index: 0; opacity: 0.3; pointer-events: none;
         }
 
-        /* --- SIDEBAR & OVERLAY --- */
         .sidebar {
             width: var(--sidebar-width); height: 100%;
             background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex; flex-direction: column; align-items: center; padding-top: 40px;
+            display: flex; flex-direction: column; align-items: center; 
+            padding-top: 40px; padding-bottom: 20px; /* Thêm padding dưới */
             z-index: 1000; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Cập nhật quan trọng: Cho phép cuộn khi menu quá dài */
+            overflow-y: auto; 
+            scrollbar-width: none; /* Ẩn cho Firefox */
         }
+
+        .sidebar::-webkit-scrollbar {
+            display: none; /* Ẩn cho Chrome, Safari */
+        }
+
+        /* --- OVERLAY CHẶN TƯƠNG TÁC --- */
         #menuOverlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 900;
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 900;
         }
-        
+
+       .menu-item {
+            writing-mode: vertical-rl; transform: rotate(180deg); 
+            padding: 15px 10px; /* Thu nhỏ padding một chút */
+            margin: 10px 0;    /* Thu nhỏ margin */
+            font-size: 0.85rem; /* Thu nhỏ font một chút để chứa được nhiều hơn */
+            letter-spacing: 2px; 
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer; transition: 0.3s; text-transform: uppercase; 
+            text-decoration: none; border-right: 3px solid transparent;
+            flex-shrink: 0; /* KHÔNG CHO PHÉP CÁC MỤC BỊ CO LẠI */
+        }
+        .menu-item.active {
+            color: #00d2fc;
+            border-right: 3px solid #00d2fc;
+        }
+
+        /* --- NÚT TOGGLE --- */
         .menu-toggle {
-            display: none; position: fixed; top: 20px; left: 20px; z-index: 200;
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 10px; border-radius: 8px; cursor: pointer;
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 200;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.3s ease, visibility 0.3s;
         }
 
         @media (max-width: 768px) {
             .menu-toggle { display: block; }
-            .sidebar { position: fixed; left: 0; transform: translateX(-100%); }
+            .sidebar {
+                position: fixed;
+                left: 0;
+                transform: translateX(-100%);
+            }
             .sidebar.open { transform: translateX(0); }
+            .sidebar.open ~ .menu-toggle { opacity: 0; visibility: hidden; }
             #menuOverlay.show { display: block; }
         }
-
-        .menu-item {
-            writing-mode: vertical-rl; transform: rotate(180deg); padding: 20px 10px; margin: 15px 0;
-            font-size: 0.9rem; letter-spacing: 3px; color: rgba(255, 255, 255, 0.5);
-            cursor: pointer; transition: 0.3s; text-transform: uppercase; text-decoration: none; border-right: 3px solid transparent;
-        }
-        .menu-item.active { color: var(--accent-color); border-right: 3px solid var(--accent-color); }
-
         /* --- MAIN AREA --- */
         .main-container {
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; z-index: 1;
@@ -174,10 +213,12 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     </button>
 
-    <aside class="sidebar" id="sidebar">
+     <aside class="sidebar" id="sidebar">
         <a href="index.html" class="menu-item">Bảng Xoay</a>
-        <a href="morse.html" class="menu-item">Morse</a>
+        <a href="morse.html" class="menu-item ">Morse</a>
         <a href="semaphore.html" class="menu-item active">Semaphore</a>
+        <a href="thaythe.html" class="menu-item">Thay thế</a>
+        <a href="camranh.html" class="menu-item ">Cam ranh</a>
     </aside>
 
     <main class="main-container" id="mainContent">
